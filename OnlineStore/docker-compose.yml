@@ -1,0 +1,33 @@
+version: "3.9"
+networks:
+  online-store-dev:
+    driver: bridge
+services:
+  app:
+    container_name: online-store
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - online-store-dev
+    depends_on:
+      - postgres
+    restart: unless-stopped
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: OnlineStore
+    ports:
+      - "5432:5432"
+    networks:
+      - online-store-dev
+    volumes:
+      - postgres-data:/var/lib/postgresql/data  
+    restart: unless-stopped
+volumes:
+  postgres-data:
