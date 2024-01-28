@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using OnlineStore.DAL.Interfaces;
 
 namespace OnlineStore.DAL.Entities
 {
-    public class Order
+    public class Order : IEntity
     {
         public long Id { get; set; }
         public long CustomerId { get; set; }
