@@ -4,22 +4,34 @@ using OnlineStore.BLL.Interfaces;
 using OnlineStore.DAL.Context;
 using OnlineStore.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
+using OnlineStore.DAL.Interfaces;
+using System.Linq.Expressions;
 
 
 namespace OnlineStore.BLL.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly OnlineStoreContext _ctx;
-        public TokenService(OnlineStoreContext ctx)
+        #region Repository
+        private readonly IGenericRepository _repository;
+        #endregion
+
+        #region Predicates
+        private Expression<Func<BearerTokenSetting, bool>> GetTokenSettingsPredicate(EnvirementTypes type)
         {
-            _ctx = ctx ?? throw new ArgumentNullException(nameof(OnlineStoreContext));
+            Expression<Func<BearerTokenSetting, bool>> predicate = b => b.EnvironmentType.Id == ((long)type);
+            return predicate;
+        }
+        #endregion
+
+        public TokenService(IGenericRepository repository)
+        {
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
         public async Task<int> GetTokenSettingsAsync(EnvirementTypes type)
         {
-            var tokenSetting = await _ctx.Set<BearerTokenSetting>().Include(x => x.EnvironmentType)
-                .Where(b => b.EnvironmentType.Id == ((long)type))
-                .SingleOrDefaultAsync() ?? throw new EntityArgumentNullException(nameof(BearerTokenSetting));
+            var predicate = GetTokenSettingsPredicate(type);
+            var tokenSetting = await _repository.GetAsync(predicate, x => x.EnvironmentType) ?? throw new NotFoundInDatabaseException();
             return tokenSetting.LifeTime;
         }
     }

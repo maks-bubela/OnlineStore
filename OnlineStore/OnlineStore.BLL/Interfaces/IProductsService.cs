@@ -13,5 +13,6 @@ namespace OnlineStore.BLL.Interfaces
         Task<ProductsDTO> GetAvailableProductsByIdAsync(long productsId);
         Task<bool> IsProductsAvaibleById(long productsId, long quantity);
         Task<bool> ProductStashed(long productsId, long quantity);
+        Task<bool> IsProductsExistById(long productsId);
     }
 }

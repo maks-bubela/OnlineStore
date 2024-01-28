@@ -2,30 +2,39 @@
 using OnlineStore.BLL.DTO;
 using OnlineStore.BLL.Exceptions;
 using OnlineStore.BLL.Interfaces;
-using OnlineStore.DAL.Context;
 using OnlineStore.DAL.Entities;
-using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using OnlineStore.DAL.Interfaces;
 
 namespace OnlineStore.BLL.Services
 {
     public class CustomerService : ICustomerService
     {
         private readonly IMapper _mapper;
-        private readonly OnlineStoreContext _ctx;
+        private readonly IGenericRepository _repository;
 
         private const long ID_NOT_FOUND = 0;
 
-        public CustomerService(IMapper mapper, OnlineStoreContext ctx)
+        public CustomerService(IMapper mapper, IGenericRepository repository)
         {
-            _mapper = mapper ?? throw new ArgumentNullException();
-            _ctx = ctx ?? throw new ArgumentNullException();
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         #region Predicates
-        public Expression<Func<Customer, bool>> CreateActiveCustomerPredicate(long customerId)
+        private Expression<Func<Customer, bool>> GetActiveCustomerByIdPredicate(long customerId)
         {
             Expression<Func<Customer, bool>> predicate = x => x.Id == customerId && !x.IsDelete;
+            return predicate;
+        }
+        private Expression<Func<Customer, bool>> GetActiveCustomerByUsernamePredicate(string username)
+        {
+            Expression<Func<Customer, bool>> predicate = x => x.Username == username && !x.IsDelete;
+            return predicate;
+        }
+        private Expression<Func<Customer, bool>> GetActiveCustomerPredicate()
+        {
+            Expression<Func<Customer, bool>> predicate = x => !x.IsDelete;
             return predicate;
         }
 
@@ -36,10 +45,8 @@ namespace OnlineStore.BLL.Services
         {
             if (id <= ID_NOT_FOUND) throw new EntityArgumentNullException(nameof(id));
 
-            var predicate = CreateActiveCustomerPredicate(id);
-            var customer = await _ctx.Set<Customer>().Where(predicate)
-                .Include(x => x.Role)
-                .SingleOrDefaultAsync();
+            var predicate = GetActiveCustomerByIdPredicate(id);
+            var customer = await _repository.GetAsync(predicate, x => x.Role);
             if (customer == null) throw new ArgumentNullException(nameof(customer));
 
             var customerDTO = _mapper.Map<CustomerDTO>(customer);
@@ -50,9 +57,8 @@ namespace OnlineStore.BLL.Services
         {
             if (username == null) throw new ArgumentNullException(nameof(username));
 
-            var customer = await _ctx.Set<Customer>().Include(x => x.Role)
-                .Where(x => x.Username == username)
-                .SingleOrDefaultAsync();
+            var predicate = GetActiveCustomerByUsernamePredicate(username);
+            var customer = await _repository.GetAsync(predicate, x => x.Role);
             if (customer == null) throw new NullReferenceException(nameof(customer));
 
             var customerDTO = _mapper.Map<CustomerDTO>(customer);
@@ -61,8 +67,9 @@ namespace OnlineStore.BLL.Services
 
         public async Task<List<CustomerDTO>> GetCustomersListAsync()
         {
-            var customersList = await _ctx.Set<Customer>().Include(x => x.Role)
-                .Where(x => !x.IsDelete).ToListAsync();
+            var predicate = GetActiveCustomerPredicate();
+            var customersList = await _repository.ListAsync(predicate, x => x.Role);
+
             if (customersList == null) throw new NullReferenceException(nameof(customersList));
 
             var userDTOList = _mapper.Map<List<CustomerDTO>>(customersList);
@@ -71,8 +78,8 @@ namespace OnlineStore.BLL.Services
 
         public async Task<bool> CustomerExistsAsync(long id)
         {
-            var predicate = CreateActiveCustomerPredicate(id);
-            var exists = await _ctx.Set<Customer>().AnyAsync(predicate);
+            var predicate = GetActiveCustomerByIdPredicate(id);
+            var exists = await _repository.IsExistAsync(predicate);
             return exists;
         }
         #endregion
@@ -82,14 +89,12 @@ namespace OnlineStore.BLL.Services
         {
             if (!await CustomerExistsAsync(id)) throw new NotFoundInDatabaseException();
 
-            var predicate = CreateActiveCustomerPredicate(id);
-            var customer = await _ctx.Set<Customer>().Where(predicate)
-                .SingleOrDefaultAsync();
+            var predicate = GetActiveCustomerByIdPredicate(id);
+            var customer = await _repository.GetAsync(predicate);
             if (customer != null)
             {
                 customer.IsDelete = true;
-                _ctx.Entry(customer).State = EntityState.Modified;
-                await _ctx.SaveChangesAsync();
+                await _repository.UpdateAsync(customer);
                 return true;
             }
             return false;

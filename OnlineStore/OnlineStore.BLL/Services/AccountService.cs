@@ -6,24 +6,41 @@ using OnlineStore.BLL.Interfaces;
 using OnlineStore.DAL.Context;
 using OnlineStore.DAL.Entities;
 using Microsoft.EntityFrameworkCore;
+using OnlineStore.DAL.Interfaces;
+using System.Linq.Expressions;
 
 
 namespace OnlineStore.BLL.Services
 {
     public class AccountService : IAccountService
     {
+        #region Services
         private readonly IMapper _mapper;
         private readonly ICustomerService _customerService;
-        private readonly OnlineStoreContext _ctx;
+        private readonly IGenericRepository _repository;
         private readonly IPasswordProcessing _passProcess;
+        #endregion
 
-        public AccountService(OnlineStoreContext ctx, IMapper mapper,
-            IPasswordProcessing passProcess, ICustomerService customerService)
+        #region Predicates
+        private Expression<Func<Role, bool>> GetRoleByNamePredicate(string customerRoleName)
+        {
+            Expression<Func<Role, bool>> predicate = a => a.Name == customerRoleName;
+            return predicate;
+        }
+        private Expression<Func<Customer, bool>> GetActiveCustomerPredicate(string customerUsername)
+        {
+            Expression<Func<Customer, bool>> predicate = a => a.Username == customerUsername && !a.IsDelete;
+            return predicate;
+        }
+        #endregion
+
+        public AccountService(IMapper mapper, IPasswordProcessing passProcess, 
+            ICustomerService customerService, IGenericRepository repository)
         {
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
-            _ctx = ctx ?? throw new ArgumentNullException(nameof(ctx));
             _passProcess = passProcess ?? throw new ArgumentNullException(nameof(passProcess));
             _customerService = customerService ?? throw new ArgumentNullException(nameof(customerService));
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         #region Create methods
@@ -31,14 +48,14 @@ namespace OnlineStore.BLL.Services
         {
             if (customerDTO == null) throw new ArgumentException(nameof(customerDTO));
             if (await _customerService.CustomerExistsAsync(customerDTO.Id)) throw new DataExistsInDatabaseException();
-
             var salt = _passProcess.GenerateSalt();
-            var role = await _ctx.Set<Role>().Where(x => x.Name == customerDTO.RoleName)
-                .SingleOrDefaultAsync();
+
+            var predicate = GetRoleByNamePredicate(customerDTO.RoleName);
+            var role = await _repository.GetAsync(predicate);
             if (role == null)
             {
-                role = await _ctx.Set<Role>().Where(x => x.Id == (long)Roles.Customer)
-                    .SingleOrDefaultAsync() ?? throw new NullReferenceException(nameof(role));
+                role = await _repository.
+                    GetAsync<Role>((long)Roles.Customer) ?? throw new NullReferenceException(nameof(role));
             }
 
             var customer = _mapper.Map<Customer>(customerDTO);
@@ -46,9 +63,8 @@ namespace OnlineStore.BLL.Services
             customer.Salt = salt;
             customer.RoleId = role.Id;
             customer.IsDelete = false;
+            await _repository.AddAsync(customer);
 
-            _ctx.Set<Customer>().Add(customer);
-            await _ctx.SaveChangesAsync();
             if (!await _customerService.CustomerExistsAsync(customer.Id)) throw new FailedAddToDatabaseException();
             return customer.Id;
         }
@@ -60,8 +76,8 @@ namespace OnlineStore.BLL.Services
             if (username == null) throw new ArgumentNullException(nameof(username));
             if (password == null) throw new ArgumentNullException(nameof(password));
 
-            var customer = await _ctx.Set<Customer>().Where(x => x.Username == username && !x.IsDelete)
-                    .SingleOrDefaultAsync();
+            var predicate = GetActiveCustomerPredicate(username);
+            var customer = await _repository.GetAsync(predicate);
             if (customer != null)
             {
                 string pass = _passProcess.GetHashCode(password, customer.Salt);
