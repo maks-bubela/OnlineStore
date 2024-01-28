@@ -25,6 +25,20 @@ namespace OnlineStore.DAL.Repository
             return await _ctx.Set<T>().Where(filter).SingleOrDefaultAsync();
         }
 
+        public async Task<T> GetAsync<T>(Expression<Func<T, bool>> filter, 
+            params Expression<Func<T, object>>[] includes) where T : class, IEntity
+        {
+            var query = _ctx.Set<T>().Where(filter);
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.SingleOrDefaultAsync();
+        }
+
+
         public async Task<IList<T>> ListAsync<T>() where T : class, IEntity
         {
             return await _ctx.Set<T>().ToListAsync();
@@ -33,6 +47,19 @@ namespace OnlineStore.DAL.Repository
         public async Task<IList<T>> ListAsync<T>(Expression<Func<T, bool>> filter) where T : class, IEntity
         {
             return await _ctx.Set<T>().Where(filter).ToListAsync();
+        }
+
+        public async Task<IList<T>> ListAsync<T>(Expression<Func<T, bool>> filter, 
+            params Expression<Func<T, object>>[] includes) where T : class, IEntity
+        {
+            var query = _ctx.Set<T>().Where(filter);
+
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task AddAsync<T>(T entity) where T : class, IEntity
@@ -51,6 +78,11 @@ namespace OnlineStore.DAL.Repository
         {
             _ctx.Entry(entity).State = EntityState.Modified;
             await _ctx.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsExistAsync<T>(Expression<Func<T, bool>> filter) where T : class, IEntity
+        {
+            return await _ctx.Set<T>().AnyAsync(filter);
         }
     }
 }
