@@ -82,6 +82,13 @@ namespace OnlineStore.BLL.Services
             var exists = await _repository.IsExistAsync(predicate);
             return exists;
         }
+
+        public async Task<bool> CustomerExistsAsync(string username)
+        {
+            var predicate = GetActiveCustomerByUsernamePredicate(username);
+            var exists = await _repository.IsExistAsync(predicate);
+            return exists;
+        }
         #endregion
 
         #region Delete Methods

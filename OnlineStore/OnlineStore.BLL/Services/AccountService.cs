@@ -47,7 +47,7 @@ namespace OnlineStore.BLL.Services
         public async Task<long> RegisterCustomerAsync(CustomerDTO customerDTO)
         {
             if (customerDTO == null) throw new ArgumentException(nameof(customerDTO));
-            if (await _customerService.CustomerExistsAsync(customerDTO.Id)) throw new DataExistsInDatabaseException();
+            if (await _customerService.CustomerExistsAsync(customerDTO.Username)) throw new DataExistsInDatabaseException();
             var salt = _passProcess.GenerateSalt();
 
             var predicate = GetRoleByNamePredicate(customerDTO.RoleName);
@@ -55,7 +55,7 @@ namespace OnlineStore.BLL.Services
             if (role == null)
             {
                 role = await _repository.
-                    GetAsync<Role>((long)Roles.Customer) ?? throw new NullReferenceException(nameof(role));
+                    GetAsync<Role>((long)Roles.Customer) ?? throw new NotFoundInDatabaseException();
             }
 
             var customer = _mapper.Map<Customer>(customerDTO);
