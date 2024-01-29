@@ -3,15 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34408.163
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineStore", "OnlineStore\OnlineStore.csproj", "{1C2F59C7-58F7-4DCA-8F6E-9EAFDC1ACE00}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OnlineStore", "OnlineStore\OnlineStore.csproj", "{1C2F59C7-58F7-4DCA-8F6E-9EAFDC1ACE00}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineStore.DAL", "OnlineStore.DAL\OnlineStore.DAL.csproj", "{094288EB-FC26-4B64-B55C-55FB114D7796}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OnlineStore.DAL", "OnlineStore.DAL\OnlineStore.DAL.csproj", "{094288EB-FC26-4B64-B55C-55FB114D7796}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineStore.Configuration", "OnlineStore.Configuration\OnlineStore.Configuration.csproj", "{6986FDB7-89D1-4FE9-997C-26E9D758BC2B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OnlineStore.Configuration", "OnlineStore.Configuration\OnlineStore.Configuration.csproj", "{6986FDB7-89D1-4FE9-997C-26E9D758BC2B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineStore.Autofac", "OnlineStore.Autofac\OnlineStore.Autofac.csproj", "{C683C1F7-FF4E-4594-9433-F800179C0CE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OnlineStore.Autofac", "OnlineStore.Autofac\OnlineStore.Autofac.csproj", "{C683C1F7-FF4E-4594-9433-F800179C0CE4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineStore.BLL", "OnlineStore.BLL\OnlineStore.BLL.csproj", "{635B4C2C-3A97-4A2A-BA00-A67594465DAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OnlineStore.BLL", "OnlineStore.BLL\OnlineStore.BLL.csproj", "{635B4C2C-3A97-4A2A-BA00-A67594465DAD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A1F08B13-8D45-4062-A472-C10989978A24}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OnlineStore.Tests", "OnlineStore.Tests\OnlineStore.Tests.csproj", "{5C272BB8-DA13-4E82-B8AE-592D3BC86EB0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,9 +43,16 @@ Global
 		{635B4C2C-3A97-4A2A-BA00-A67594465DAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{635B4C2C-3A97-4A2A-BA00-A67594465DAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{635B4C2C-3A97-4A2A-BA00-A67594465DAD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5C272BB8-DA13-4E82-B8AE-592D3BC86EB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C272BB8-DA13-4E82-B8AE-592D3BC86EB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C272BB8-DA13-4E82-B8AE-592D3BC86EB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C272BB8-DA13-4E82-B8AE-592D3BC86EB0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5C272BB8-DA13-4E82-B8AE-592D3BC86EB0} = {A1F08B13-8D45-4062-A472-C10989978A24}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4A4B0794-C0FA-4C31-A8D4-E223935D06FA}
