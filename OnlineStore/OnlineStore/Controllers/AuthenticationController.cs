@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using OnlineStore.BLL.DTO;
 using OnlineStore.BLL.Enums;
 using OnlineStore.BLL.Interfaces;
+using OnlineStore.ExtensionMethods;
 using OnlineStore.Interfaces;
 using OnlineStore.Models;
 using System.Security.Claims;
@@ -15,6 +18,7 @@ namespace OnlineStore.Controllers
         #region Constants
         private const string InvalidUserData = "Invalid username or password.";
         private const string InvalidModel = "Invalid input model.";
+        private const string CacheTokenAccess = "accessToken";
         #endregion
 
         #region Services
@@ -24,10 +28,11 @@ namespace OnlineStore.Controllers
         private readonly ITokenService _tokenService;
         private readonly EnvirementTypes _envirementType;
         private readonly ICustomerService _userService;
+        private readonly IDistributedCache _cache;
         #endregion
 
         public AuthenticationController(ITokenService tokenService, IAccountService accountService,
-            IMapper mapper, IAuthOptions authOptions, ICustomerService userService)
+            IMapper mapper, IAuthOptions authOptions, ICustomerService userService, IDistributedCache cache)
         {
             _accountService = accountService ?? throw new ArgumentNullException(nameof(IAccountService));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(IMapper));
@@ -35,8 +40,9 @@ namespace OnlineStore.Controllers
             _tokenService = tokenService ?? throw new ArgumentNullException(nameof(ITokenService));
             _envirementType = EnvirementTypes.Development;
             _userService = userService ?? throw new ArgumentNullException(nameof(ICustomerService));
+            _cache = cache ?? throw new ArgumentNullException(nameof(IDistributedCache));
 
-        }
+    }
 
         /// <summary>
         /// Authenticates a customer and returns generated token if authentication is successful
@@ -60,12 +66,7 @@ namespace OnlineStore.Controllers
                 var lifeTime = await _tokenService.GetTokenSettingsAsync(_envirementType);
                 if (lifeTime == 0)
                     return NoContent();
-                var tokenSettingsDto = new TokenSettingsDTO()
-                {
-                    Identity = identity,
-                    LifeTime = lifeTime
-                };
-                var encodedJwt = _authOptions.GetSymmetricSecurityKey(tokenSettingsDto);
+                var encodedJwt = await GetTokenAsync(identity, lifeTime, customer.Username);
                 var response = new
                 {
                     access_token = encodedJwt
@@ -130,6 +131,23 @@ namespace OnlineStore.Controllers
                 }
             }
             return null;
+        }
+
+        private async Task<string> GetTokenAsync(ClaimsIdentity identity, int lifeTime, string username)
+        {
+            var tokenSettingsDto = new TokenSettingsDTO()
+            {
+                Identity = identity,
+                LifeTime = lifeTime
+            };
+            var cachedToken = await _cache.GetStringAsync(username + CacheTokenAccess);
+            if (cachedToken == null)
+            {
+                var encodedJwt = _authOptions.GetSymmetricSecurityKey(tokenSettingsDto);
+                await _cache.SetStringWithExpirationAsync(username + CacheTokenAccess, encodedJwt, TimeSpan.FromMinutes(lifeTime));
+                return encodedJwt;
+            }
+            return cachedToken;
         }
     }
 }
